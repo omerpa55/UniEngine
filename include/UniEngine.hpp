@@ -30,6 +30,14 @@ namespace Loc {
     inline Loc3D createLoc3D(double X, double Y, double Z) {
         return Loc3D { X, Y, Z };
     }
+
+    inline Loc2D createEmptyLoc2D() {
+        return Loc2D{};
+    }
+
+    inline Loc3D createEmptyLoc3D() {
+        return Loc3D{};
+    }
 }
 
 #endif
