@@ -9,11 +9,14 @@ project(
 dependencies = [
 ]
 
+inc = include_directories('include')
+
 exe = executable(
   'UniEngine',
   'uniengine.cpp',
   install : true,
   dependencies : dependencies,
+  include_directories : [inc]
 )
 
 test('basic', exe)
