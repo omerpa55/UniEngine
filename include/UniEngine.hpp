@@ -52,8 +52,9 @@ namespace Entity {
     private:
         int id;
         EntityType2D type;
+        Entity2D* parent = nullptr;
         int childCount = 0;
-        std::vector<Entity2D> child;
+        std::vector<Entity2D*> children;
     public:
         inline int getID() const {
             return id;
@@ -67,10 +68,19 @@ namespace Entity {
             return type;
         }
 
-        inline bool addChild(Entity2D *entity) const {
-            //ara verdim
-            
-            return 0;
+        inline void addChild(Entity2D *child) {
+            if (child) {
+                child->parent = this;
+                children.push_back(child);
+            }
+        }
+
+        inline bool isRoot() const {
+            return parent == nullptr;
+        }
+
+        inline const std::vector<Entity2D*>& getChildren() const {
+            return children;
         }
     };
 }
