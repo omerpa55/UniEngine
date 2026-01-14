@@ -48,6 +48,7 @@ namespace Entity {
         MESH_3D = 1
     };
 
+    //Entityleri tanımlıyoruz
     class Entity2D {
     private:
         int id;
@@ -80,6 +81,43 @@ namespace Entity {
         }
 
         inline const std::vector<Entity2D*>& getChildren() const {
+            return children;
+        }
+    };
+
+    //Aynı şekilde 3 boyutlu bir Entity sınıfı da oluşturuyoruz
+    class Entity3D {
+    private:
+        int id;
+        EntityType3D type;
+        Entity3D* parent = nullptr;
+        int childCount = 0;
+        std::vector<Entity3D*> children;
+    public:
+        inline int getId() const {
+            return id;
+        }
+        
+        inline EntityType3D getType() const {
+            return type;
+        }
+
+        inline bool isRoot() const {
+            return parent == nullptr;
+        }
+
+        inline int getChildCount() const {
+            return childCount;
+        }
+
+        inline void addChild(Entity3D* child) {
+            if (child) {
+                child->parent = this;
+                children.push_back(child);
+            }
+        }
+
+        inline const std::vector<Entity3D*>& getChildren() const {
             return children;
         }
     };
