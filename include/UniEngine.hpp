@@ -83,6 +83,8 @@ namespace Entity {
         inline const std::vector<Entity2D*>& getChildren() const {
             return children;
         }
+
+        Entity2D(int id, EntityType2D type) : id(id), type(type) {};
     };
 
     //Aynı şekilde 3 boyutlu bir Entity sınıfı da oluşturuyoruz
@@ -120,6 +122,8 @@ namespace Entity {
         inline const std::vector<Entity3D*>& getChildren() const {
             return children;
         }
+
+        Entity3D(int id, EntityType3D type) : id(id), type(type) {};
     };
 }
 
