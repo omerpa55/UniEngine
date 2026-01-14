@@ -1,43 +1,29 @@
 #ifndef UNIENGINE_HPP
 #define UNIENGINE_HPP
 
-enum EntityType2D {
-    PLAYER_2D = 0,
-    MESH_2D = 0
-};
+namespace Entity {
+    enum EntityType2D {
+        PLAYER_2D = 0,
+        MESH_2D = 1
+    };
 
-enum EntityType3D {
-    PLAYER_3D = 0,
-    MESH_3D = 0
-};
-
-typedef struct {
-    double X;
-    double Y;
-} Loc2D;
-
-typedef struct {
-    double X;
-    double Y;
-    double Z;
-} Loc3D;
+    enum EntityType3D {
+        PLAYER_3D = 0,
+        MESH_3D = 1
+    };
+}
 
 namespace Loc {
-    inline Loc2D createLoc2D(double X, double Y) {
-        return Loc2D { X, Y };
-    }
+    struct Loc2D {
+        float X;
+        float Y;
+    };
     
-    inline Loc3D createLoc3D(double X, double Y, double Z) {
-        return Loc3D { X, Y, Z };
-    }
-
-    inline Loc2D createEmptyLoc2D() {
-        return Loc2D{};
-    }
-
-    inline Loc3D createEmptyLoc3D() {
-        return Loc3D{};
-    }
+    struct Loc3D {
+        float X;
+        float Y;
+        float Z;
+    };
 }
 
 #endif
