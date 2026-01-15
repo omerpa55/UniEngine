@@ -35,98 +35,6 @@ DEALINGS IN THE SOFTWARE.
     #include <type_traits>
 #endif
 
-//Entity için türetilmeyen sınıf oluşturuyoruz
-namespace Entity {
-    //Entitylere tipler tanımlıyoruz
-    enum EntityType2D {
-        PLAYER_2D = 0,
-        MESH_2D = 1
-    };
-
-    enum EntityType3D {
-        PLAYER_3D = 0,
-        MESH_3D = 1
-    };
-
-    //Entityleri tanımlıyoruz
-    class Entity2D {
-    private:
-        int id;
-        EntityType2D type;
-        Entity2D* parent = nullptr;
-        int childCount = 0;
-        std::vector<Entity2D*> children;
-    public:
-        inline int getID() const {
-            return id;
-        }
-        
-        inline int getChildCount() const {
-            return childCount;
-        }
-        
-        inline EntityType2D getType() const {
-            return type;
-        }
-
-        inline void addChild(Entity2D *child) {
-            if (child) {
-                child->parent = this;
-                children.push_back(child);
-            }
-        }
-
-        inline bool isRoot() const {
-            return parent == nullptr;
-        }
-
-        inline const std::vector<Entity2D*>& getChildren() const {
-            return children;
-        }
-
-        Entity2D(int id, EntityType2D type) : id(id), type(type) {};
-    };
-
-    //Aynı şekilde 3 boyutlu bir Entity sınıfı da oluşturuyoruz
-    class Entity3D {
-    private:
-        int id;
-        EntityType3D type;
-        Entity3D* parent = nullptr;
-        int childCount = 0;
-        std::vector<Entity3D*> children;
-    public:
-        inline int getId() const {
-            return id;
-        }
-        
-        inline EntityType3D getType() const {
-            return type;
-        }
-
-        inline bool isRoot() const {
-            return parent == nullptr;
-        }
-
-        inline int getChildCount() const {
-            return childCount;
-        }
-
-        inline void addChild(Entity3D* child) {
-            if (child) {
-                child->parent = this;
-                children.push_back(child);
-            }
-        }
-
-        inline const std::vector<Entity3D*>& getChildren() const {
-            return children;
-        }
-
-        Entity3D(int id, EntityType3D type) : id(id), type(type) {};
-    };
-}
-
 //Locationlar için türetilmeyen sınıf oluşturuyoruz
 namespace Loc {
     //2D bir lokasyon tipi oluşturuyoruz (vector<float>())
@@ -193,5 +101,125 @@ namespace Loc {
 
 
 }
+
+//Entity için türetilmeyen sınıf oluşturuyoruz
+namespace Entity {
+    //Entitylere tipler tanımlıyoruz
+    enum EntityType2D {
+        PLAYER_2D = 0,
+        MESH_2D = 1
+    };
+
+    enum EntityType3D {
+        PLAYER_3D = 0,
+        MESH_3D = 1
+    };
+
+    //Entityleri tanımlıyoruz
+    class Entity2D {
+    private:
+        int id;
+        EntityType2D type;
+        Entity2D* parent = nullptr;
+        int childCount = 0;
+        std::vector<Entity2D*> children;
+        Loc::Loc2D loc;
+    public:
+        inline int getID() const {
+            return id;
+        }
+        
+        inline int getChildCount() const {
+            return childCount;
+        }
+        
+        inline EntityType2D getType() const {
+            return type;
+        }
+
+        inline Loc::Loc2D getLoc() const {
+            return loc;
+        }
+
+        inline void setLoc(float X, float Y) {
+            loc = Loc::createLoc2D(X, Y);
+        }
+
+        inline void setLoc(Loc::Loc2D newLoc) {
+            loc = newLoc;
+        }
+
+        inline void addChild(Entity2D *child) {
+            if (child) {
+                child->parent = this;
+                children.push_back(child);
+            }
+        }
+
+        inline bool isRoot() const {
+            return parent == nullptr;
+        }
+
+        inline const std::vector<Entity2D*>& getChildren() const {
+            return children;
+        }
+
+        Entity2D(int id, EntityType2D type, Loc::Loc2D loc) : id(id), type(type), loc(loc) {};
+    };
+
+    //Aynı şekilde 3 boyutlu bir Entity sınıfı da oluşturuyoruz
+    class Entity3D {
+    private:
+        int id;
+        EntityType3D type;
+        Entity3D* parent = nullptr;
+        int childCount = 0;
+        std::vector<Entity3D*> children;
+        Loc::Loc3D loc;
+    public:
+        inline int getId() const {
+            return id;
+        }
+        
+        inline EntityType3D getType() const {
+            return type;
+        }
+
+        inline bool isRoot() const {
+            return parent == nullptr;
+        }
+
+        inline int getChildCount() const {
+            return childCount;
+        }
+
+        inline Loc::Loc3D getLoc() const {
+            return loc;
+        }
+
+        inline void setLoc(float X, float Y, float Z) {
+            loc = Loc::createLoc3D(X, Y, Z);
+        }
+
+        inline void setLoc(Loc::Loc3D newLoc) {
+            loc = newLoc;
+        }
+
+        inline void addChild(Entity3D* child) {
+            if (child) {
+                child->parent = this;
+                children.push_back(child);
+            }
+        }
+
+        inline const std::vector<Entity3D*>& getChildren() const {
+            return children;
+        }
+
+        Entity3D(int id, EntityType3D type, Loc::Loc3D loc) : id(id), type(type), loc(loc) {};
+    };
+}
+
+
 
 #endif
