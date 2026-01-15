@@ -21,205 +21,59 @@ DEALINGS IN THE SOFTWARE.
 #ifndef UNIENGINE_HPP
 #define UNIENGINE_HPP
 
-//C için derlemeyi engelliyoruz
-
-#if !defined (__cplusplus)
-    #error This Library is for C++
-#endif
-
 #include <vector>
-
-//Eğer DEBUG tanımlıysa gerekli kütüphaneleri al
-#if defined (UNI_ENGINE_DEBUG)
-    #include <string>
-    #include <type_traits>
+#if !defined (__cplusplus)
+    #error This library is for C++
 #endif
 
-//Locationlar için türetilmeyen sınıf oluşturuyoruz
 namespace Loc {
-    //2D bir lokasyon tipi oluşturuyoruz (vector<float>())
-    //Hız önceliğimiz olacağı için düşük seviyeli olan struct tipini kullanıyoruz
-    struct Loc2D {
-        float X;
-        float Y;
-        //Eğer DEBUG tanımlanmışsa log için isim oluşturuyoruz
-        #if defined (UNI_ENGINE_DEBUG)
-            std::string name;
-        #endif
-    };
-
-    //3D bir lokasyon tipi oluşturuyoruz
     struct Loc3D {
         float X;
         float Y;
         float Z;
-        //Aynı şekilde buraya da yapıyoruz
-        #if defined (UNI_ENGINE_DEBUG)
-            std::string name;
-        #endif
     };
 
-    //Lokasyonlar için oluşturucu fonksiyonlar yazıyoruz
-    inline Loc2D createLoc2D(float X, float Y) {
-        return Loc2D { X, Y };
+    inline Loc3D setLoc3D(float X, float Y, float Z) {
+        return { X, Y, Z };
     }
 
-    inline Loc3D createLoc3D(float X, float Y, float Z) {
-        return Loc3D { X, Y, Z };
+    inline Loc3D setLoc3DToEmpty() {
+        return setLoc3D(0.0f, 0.0f, 0.0f);
     }
-
-    inline Loc2D createEmptyLoc2D() {
-        return Loc2D {};
-    }
-
-    inline Loc3D createEmptyLoc3D() {
-        return Loc3D {};
-    }
-
-    //Eğer DEBUG tanımlıysa log sistemlerini açıyoruz
-    #if defined (UNI_ENGINE_DEBUG)
-
-    //Loc2D için log
-    inline void logLocL(Loc2D loc) {
-        std::cout << "[INFO] " << loc.name << " X: " << loc.X << " Y: " << loc.Y << std::endl;
-    }
-
-    //Loc3D için log
-    inline void logLocL(Loc3D loc) {
-        std::cout << "[INFO] " << loc.name << " X: " << loc.X << " Y: " << loc.Y << " Z: " << loc.Z << std::endl;
-    }
-
-    //Akıllı seçim yapan fonksiyon
-    template <typename T, 
-        typename = std::enable_if_t<std::is_same<T, Loc2D>::value || 
-        std::is_same<T, Loc3D>::value>>
-    inline void logLoc(T loc) {
-        logLocL(loc);
-    }
-
-    #endif
-
-
 }
 
-//Entity için türetilmeyen sınıf oluşturuyoruz
 namespace Entity {
-    //Entitylere tipler tanımlıyoruz
-    enum EntityType2D {
-        PLAYER_2D = 0,
+    enum EntityType3D {
+        PLAYER_3D = 0,
         MESH_2D = 1
     };
 
-    enum EntityType3D {
-        PLAYER_3D = 0,
-        MESH_3D = 1
-    };
-
-    //Entityleri tanımlıyoruz
-    class Entity2D {
-    private:
-        int id;
-        EntityType2D type;
-        Entity2D* parent = nullptr;
-        int childCount = 0;
-        std::vector<Entity2D*> children;
-        Loc::Loc2D loc;
-    public:
-        inline int getID() const {
-            return id;
-        }
-        
-        inline int getChildCount() const {
-            return childCount;
-        }
-        
-        inline EntityType2D getType() const {
-            return type;
-        }
-
-        inline Loc::Loc2D getLoc() const {
-            return loc;
-        }
-
-        inline void setLoc(float X, float Y) {
-            loc = Loc::createLoc2D(X, Y);
-        }
-
-        inline void setLoc(Loc::Loc2D newLoc) {
-            loc = newLoc;
-        }
-
-        inline void addChild(Entity2D *child) {
-            if (child) {
-                child->parent = this;
-                children.push_back(child);
-            }
-        }
-
-        inline bool isRoot() const {
-            return parent == nullptr;
-        }
-
-        inline const std::vector<Entity2D*>& getChildren() const {
-            return children;
-        }
-
-        Entity2D(int id, EntityType2D type, Loc::Loc2D loc) : id(id), type(type), loc(loc) {};
-    };
-
-    //Aynı şekilde 3 boyutlu bir Entity sınıfı da oluşturuyoruz
-    class Entity3D {
-    private:
+    struct Entity3D {
         int id;
         EntityType3D type;
-        Entity3D* parent = nullptr;
-        int childCount = 0;
-        std::vector<Entity3D*> children;
+        int parentId = -1;
         Loc::Loc3D loc;
-    public:
-        inline int getId() const {
-            return id;
-        }
-        
-        inline EntityType3D getType() const {
-            return type;
-        }
 
-        inline bool isRoot() const {
-            return parent == nullptr;
-        }
-
-        inline int getChildCount() const {
-            return childCount;
-        }
-
-        inline Loc::Loc3D getLoc() const {
-            return loc;
-        }
-
-        inline void setLoc(float X, float Y, float Z) {
-            loc = Loc::createLoc3D(X, Y, Z);
-        }
-
-        inline void setLoc(Loc::Loc3D newLoc) {
-            loc = newLoc;
-        }
-
-        inline void addChild(Entity3D* child) {
-            if (child) {
-                child->parent = this;
-                children.push_back(child);
-            }
-        }
-
-        inline const std::vector<Entity3D*>& getChildren() const {
-            return children;
-        }
-
-        Entity3D(int id, EntityType3D type, Loc::Loc3D loc) : id(id), type(type), loc(loc) {};
+        inline bool isRoot() const { return parentId == -1; };
     };
 }
 
+namespace Registry {
+    using Registry3D = std::vector<Entity::Entity3D>;
 
+    inline Registry3D& getRegistry3D() {
+        static Registry3D registry;
+        return registry;
+    }
+
+    inline Entity::Entity3D& createEntity3D(Entity::EntityType3D type, Loc::Loc3D loc) {
+        Registry3D& reg = getRegistry3D();
+        int newID = static_cast<int>(reg.size());
+
+        reg.push_back({ newID, type, -1, loc });
+
+        return reg.back();
+    }
+}
 
 #endif
