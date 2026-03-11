@@ -25,9 +25,11 @@ DEALINGS IN THE SOFTWARE.
     #error This library is for C++
 #endif
 
+#include <glad/glad.h>
 #include <vector>
 #include <string>
 #include <GLFW/glfw3.h>
+#include <iostream>
 
 namespace Loc {
     struct Loc3D {
@@ -117,8 +119,56 @@ namespace Entity {
         inline int getID() const { return id; };
     };
 }
+namespace Shader {
+    const char* defaultVertexShader = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
 
+    void main() {
+        gl_Position = vec4(aPos, 1.0f);
+    }
+    )";
+
+    const char* defaultFragmentShader = R"(
+    #version 330 core
+    out vec4 fragColor;
+    uniform vec3 solidColor;
+
+    void main() {
+        fragColor = vec4(solidColor, 1.0f);
+    }
+    )";
+}
 namespace Game {
+    inline void initGame() {
+        glfwInit();
+    }
+
+    enum GLstatus {
+        GL_CORE = 0, GL_COMPATIBILITY = 1
+    };
+
+    enum WindowStatus {
+        CLOSING = 0, ACTIVE = 1
+    };
+
+    inline void setGlVersion(int minor, int major, GLstatus status) {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
+        glfwWindowHint(GLFW_VERSION_MAJOR, major);
+
+        if (status == GL_CORE) {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        }
+
+        if (status == GL_COMPATIBILITY) {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+        }
+
+        #if defined (__APPLE__)
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        #endif
+    }
+
     struct WindowProperties {
         int w;
         int h;
@@ -127,9 +177,90 @@ namespace Game {
 
     typedef GLFWwindow* Window;
 
-    Window createWindow(WindowProperties* properties) {
+    inline Window createWindow(WindowProperties* properties) {
         return (Window) glfwCreateWindow(properties->w, properties->h, properties->title.c_str(), nullptr, nullptr);
     }
+
+    inline void setDefaultWindow(Window window) {
+        glfwMakeContextCurrent(window);
+    }
+
+    inline WindowStatus getWindowStatus(Window window) {
+        if (!glfwWindowShouldClose(window)) {
+            return CLOSING;
+        } else {
+            return ACTIVE;
+        }
+    }
+
+    inline void makeNewRate(Window window) {
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    inline void closeWindow(Window window) {
+        glfwDestroyWindow(window);
+    }
+
+    inline void terminateGame() {
+        glfwTerminate();
+    }
+
+    inline void byeToAll(Window window) {
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+
+    inline void getGlFunctions() {
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            std::cerr << "[ERR] Failed to load gl funcs" << std::endl;
+        }
+    }
+
+    typedef unsigned int program;
+    typedef unsigned int shader;
+
+    inline void createMainPipeline(const char* vertexcode, const char* fragmentcode) {
+        program program = glCreateProgram();
+
+        shader vertexSh = glCreateShader(GL_VERTEX_SHADER);
+        if (vertexcode == nullptr) {
+            glShaderSource(vertexSh, 1, &Shader::defaultVertexShader, NULL);
+        }
+        glShaderSource(vertexSh, 1, &vertexcode, NULL);
+        glCompileShader(vertexSh);
+
+        shader fragmentSh = glCreateShader(GL_FRAGMENT_SHADER);
+        if (fragmentcode == nullptr) {
+            glShaderSource(fragmentSh, 1, &Shader::defaultFragmentShader, NULL);
+        }
+        glShaderSource(fragmentSh, 1, &fragmentcode, NULL);
+        glCompileShader(fragmentSh);
+
+        glAttachShader(program, vertexSh);
+        glAttachShader(program, fragmentSh);
+
+        glLinkProgram(program);
+
+        glDeleteShader(vertexSh);
+        glDeleteShader(fragmentSh);
+    }
+
+    inline Game::Window createWindowAndMakeReady(int w, int h, std::string title) {
+        Game::setGlVersion(3, 3, GL_CORE);
+
+        Game::WindowProperties properties = { w, h, title };
+
+        Game::Window window = Game::createWindow(&properties);
+
+        Game::setDefaultWindow(window);
+
+        Game::getGlFunctions();
+
+        return window;
+    }
 }
+
+
 
 #endif
