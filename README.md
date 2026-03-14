@@ -10,6 +10,9 @@ This project licensed under [MIT](LICENSE) license.
 ## Beta
 I am sorry to say that, "**BETA** version".
 
+## Creating Project
+I will add a script creates project and configures settings
+
 ## Thanks
 Meson Build System
 
