@@ -17,5 +17,3 @@ I will add a script creates project and configures settings
 Meson Build System
 
 LLVM (clang)
-
-# I will add a install script
