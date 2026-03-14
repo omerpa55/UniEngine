@@ -122,7 +122,7 @@ namespace Entity {
     };
 }
 namespace Shader {
-    inline const char* defaultVertexShader = R"(
+    inline const char* defaultVertexShader2D = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
 
@@ -138,6 +138,18 @@ namespace Shader {
 
     void main() {
         fragColor = vec4(solidColor, 1.0f);
+    }
+    )";
+    
+    inline const char* defaultVertexShader3D = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
+    uniform mat4 projection;
+    uniform mat4 view;
+    uniform mat4 model;
+
+    void main() {
+        gl_Position = projection * view * model * vec4(aPos, 1.0f);
     }
     )";
 }
@@ -233,6 +245,20 @@ namespace Game {
         }
     }
 
+    enum dimensionType {
+        THREE_D = 0, TWO_D = 1
+    };
+
+    inline dimensionType& getDimension() {
+        static dimensionType dimension = TWO_D;
+        return dimension;
+    }
+
+    inline void enable3D() {
+        glEnable(GL_DEPTH_TEST);
+        getDimension() = THREE_D;
+    }
+
     using program = unsigned int;
     using shader = unsigned int;
 
@@ -249,7 +275,12 @@ namespace Game {
 
         shader vertexSh = glCreateShader(GL_VERTEX_SHADER);
         if (vertexcode == nullptr) {
-            glShaderSource(vertexSh, 1, &Shader::defaultVertexShader, NULL);
+            if (getDimension() == TWO_D) {
+                glShaderSource(vertexSh, 1, &Shader::defaultVertexShader2D, NULL);
+            }
+            if (getDimension() == THREE_D) {
+                glShaderSource(vertexSh, 1, &Shader::defaultVertexShader3D, NULL);
+            }
         } else {
             glShaderSource(vertexSh, 1, &vertexcode, NULL);
         }
@@ -279,6 +310,12 @@ namespace Game {
 
     struct uniformLocations {
         UniformLoc solidColor;
+    };
+
+    struct uniformLocationsCam {
+        UniformLoc projection;
+        UniformLoc view;
+        UniformLoc model;
     };
 
     struct objectData {
@@ -371,6 +408,8 @@ namespace Game {
         color[1] = g / 255.0f;
         color[2] = b / 255.0f;
     }
+
+
 }
 
 #endif
