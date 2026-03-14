@@ -7,7 +7,16 @@ int main() {
 
     Game::createMainPipeline(nullptr, nullptr);
 
-    while (Game::getWindowStatus(window) == Game::CLOSING) {
+    Game::Color color;
+    Game::createColorRGB(color, 255, 0, 0);
+
+    Game::objectData plane = Game::createObject(Objects::plane, Game::TRIANGLES, color);
+
+    while (Game::getWindowStatus(window) == Game::ACTIVE) {
+        Game::preloadRate();
+
+        Game::drawObject(plane, Game::TRIANGLES);
+
         Game::makeNewRate(window);
     }
 

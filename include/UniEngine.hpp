@@ -21,6 +21,8 @@ DEALINGS IN THE SOFTWARE.
 #ifndef UNIENGINE_HPP
 #define UNIENGINE_HPP
 
+#include <cstddef>
+#include <cstdlib>
 #if !defined (__cplusplus)
     #error This library is for C++
 #endif
@@ -120,7 +122,7 @@ namespace Entity {
     };
 }
 namespace Shader {
-    const char* defaultVertexShader = R"(
+    inline const char* defaultVertexShader = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
 
@@ -129,7 +131,7 @@ namespace Shader {
     }
     )";
 
-    const char* defaultFragmentShader = R"(
+    inline const char* defaultFragmentShader = R"(
     #version 330 core
     out vec4 fragColor;
     uniform vec3 solidColor;
@@ -139,6 +141,19 @@ namespace Shader {
     }
     )";
 }
+
+namespace Objects {
+    inline float plane[] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        -0.5f,  0.5f, 0.0f,
+
+        0.5f, -0.5f, 0.0f,
+        0.5f,  0.5f, 0.0f,
+        -0.5f,  0.5f, 0.0f
+    };
+}
+
 namespace Game {
     inline void initGame() {
         glfwInit();
@@ -154,7 +169,7 @@ namespace Game {
 
     inline void setGlVersion(int minor, int major, GLstatus status) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
-        glfwWindowHint(GLFW_VERSION_MAJOR, major);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
 
         if (status == GL_CORE) {
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -186,7 +201,7 @@ namespace Game {
     }
 
     inline WindowStatus getWindowStatus(Window window) {
-        if (!glfwWindowShouldClose(window)) {
+        if (glfwWindowShouldClose(window)) {
             return CLOSING;
         } else {
             return ACTIVE;
@@ -214,36 +229,127 @@ namespace Game {
     inline void getGlFunctions() {
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             std::cerr << "[ERR] Failed to load gl funcs" << std::endl;
+            exit(1);
         }
     }
 
-    typedef unsigned int program;
-    typedef unsigned int shader;
+    using program = unsigned int;
+    using shader = unsigned int;
+
+    inline program& getProgram() {
+        static program programId = 0;
+        if (programId == 0) {
+            programId = glCreateProgram();
+        }
+        return programId;
+    }
 
     inline void createMainPipeline(const char* vertexcode, const char* fragmentcode) {
-        program program = glCreateProgram();
+        program& programId = Game::getProgram();
 
         shader vertexSh = glCreateShader(GL_VERTEX_SHADER);
         if (vertexcode == nullptr) {
             glShaderSource(vertexSh, 1, &Shader::defaultVertexShader, NULL);
+        } else {
+            glShaderSource(vertexSh, 1, &vertexcode, NULL);
         }
-        glShaderSource(vertexSh, 1, &vertexcode, NULL);
         glCompileShader(vertexSh);
 
         shader fragmentSh = glCreateShader(GL_FRAGMENT_SHADER);
         if (fragmentcode == nullptr) {
             glShaderSource(fragmentSh, 1, &Shader::defaultFragmentShader, NULL);
+        } else {
+            glShaderSource(fragmentSh, 1, &fragmentcode, NULL);
         }
-        glShaderSource(fragmentSh, 1, &fragmentcode, NULL);
         glCompileShader(fragmentSh);
 
-        glAttachShader(program, vertexSh);
-        glAttachShader(program, fragmentSh);
+        glAttachShader(programId, vertexSh);
+        glAttachShader(programId, fragmentSh);
 
-        glLinkProgram(program);
+        glLinkProgram(programId);
 
         glDeleteShader(vertexSh);
         glDeleteShader(fragmentSh);
+    }
+
+    using Vbo = unsigned int;
+    using Vao = unsigned int;
+    using Color = float[3];
+    using UniformLoc = int;
+
+    struct uniformLocations {
+        UniformLoc solidColor;
+    };
+
+    struct objectData {
+        Vbo vbo;
+        Vao vao;
+        std::size_t vertexCount;
+        Color color;
+        uniformLocations ulocs;
+    };
+
+    enum objectType {
+        TRIANGLES = 0, QUADS = 1
+    };
+
+    template<std::size_t N>
+    inline objectData createObject(float (&array)[N], objectType type, Color color) {
+        if (type == TRIANGLES) {
+            //Rule: TRIANGLES type arrays' data must be float * 3 by a coordinate
+            objectData data{};
+
+            program& programId = getProgram();
+
+            data.ulocs.solidColor = glGetUniformLocation(programId, "solidColor");
+
+            data.vertexCount = N / 3;
+
+            data.color[0] = color[0];
+            data.color[1] = color[1];
+            data.color[2] = color[2];
+            
+            glGenBuffers(1, &data.vbo);
+            glGenVertexArrays(1, &data.vao);
+
+            glBindVertexArray(data.vao);
+            glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
+
+            glBufferData(GL_ARRAY_BUFFER, sizeof(array), array, GL_STATIC_DRAW);
+
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, NULL);
+            glEnableVertexAttribArray(0);
+
+            glBindVertexArray(0);
+
+            return data;
+        }
+
+        if (type == QUADS) {
+            std::cerr << "[ERR] QUADS is deprecated";
+            exit(1);
+        }
+
+        return {};
+    }
+
+    inline void preloadRate() {
+        glUseProgram(getProgram());
+    }
+
+    inline void drawObject(objectData& data, objectType type) {
+        glBindVertexArray(data.vao);
+        
+        glUniform3f(data.ulocs.solidColor, data.color[0], data.color[1], data.color[2]);
+
+        if (type == TRIANGLES) {
+            glDrawArrays(GL_TRIANGLES, 0, data.vertexCount);
+        }
+
+        if (type == QUADS) {
+            std::cerr << "[ERR]QUADS is deprecated";
+            exit(1);
+        }
     }
 
     inline Game::Window createWindowAndMakeReady(int w, int h, std::string title) {
@@ -259,8 +365,12 @@ namespace Game {
 
         return window;
     }
+
+    inline void createColorRGB(Color color, int r, int g, int b) {
+        color[0] = r / 255.0f;
+        color[1] = g / 255.0f;
+        color[2] = b / 255.0f;
+    }
 }
-
-
 
 #endif
