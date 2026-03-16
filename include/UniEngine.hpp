@@ -408,8 +408,6 @@ namespace Game {
         color[1] = g / 255.0f;
         color[2] = b / 255.0f;
     }
-
-
 }
 
 #endif
