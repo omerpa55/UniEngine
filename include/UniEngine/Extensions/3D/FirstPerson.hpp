@@ -1,0 +1,4 @@
+#ifndef FIRSTPERSON_HPP
+#define FIRSTPERSON_HPP
+
+#endif

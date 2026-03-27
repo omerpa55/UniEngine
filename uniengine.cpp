@@ -1,4 +1,4 @@
-#include <UniEngine.hpp>
+#include <UniEngine/UniEngine.hpp>
 
 int main() {
     Game::initGame();
@@ -10,12 +10,17 @@ int main() {
     Game::Color color;
     Game::createColorRGB(color, 255, 0, 0);
 
-    Game::objectData plane = Game::createObject(Objects::plane, Game::TRIANGLES, color);
+    Game::objectData2D plane = Game::createObject2D(
+        Objects::plane,
+        Game::TRIANGLES,
+        color,
+        { 0, 0, 0 }
+    );
 
     while (Game::getWindowStatus(window) == Game::ACTIVE) {
         Game::preloadRate();
 
-        Game::drawObject(plane, Game::TRIANGLES);
+        Game::drawObject2D(plane, Game::TRIANGLES);
 
         Game::makeNewRate(window);
     }

@@ -7,9 +7,10 @@ project(
 )
 
 glfw3 = dependency('glfw3', required : true)
+glm = dependency('glm', required : true)
 
 dependencies = [
-  glfw3
+  glfw3, glm
 ]
 
 inc = include_directories('include')

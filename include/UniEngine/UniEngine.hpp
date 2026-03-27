@@ -21,6 +21,13 @@ DEALINGS IN THE SOFTWARE.
 #ifndef UNIENGINE_HPP
 #define UNIENGINE_HPP
 
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/vector_float3.hpp"
+#include "glm/fwd.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/trigonometric.hpp"
 #include <cstddef>
 #include <cstdlib>
 #if !defined (__cplusplus)
@@ -32,20 +39,21 @@ DEALINGS IN THE SOFTWARE.
 #include <string>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <glm/glm.hpp>
 
 namespace Loc {
-    struct Loc3D {
+    struct Loc {
         float X;
         float Y;
         float Z;
     };
 
-    inline Loc3D setLoc3D(float X, float Y, float Z) {
+    inline Loc setLoc(float X, float Y, float Z) {
         return { X, Y, Z };
     }
 
-    inline Loc3D setLoc3DToEmpty() {
-        return setLoc3D(0.0f, 0.0f, 0.0f);
+    inline Loc setLocToEmpty() {
+        return setLoc(0.0f, 0.0f, 0.0f);
     }
 }
 
@@ -59,7 +67,7 @@ namespace Entity {
         int id;
         EntityType3D type;
         int parentId = -1;
-        Loc::Loc3D loc;
+        Loc::Loc loc;
 
         inline bool isRoot() const { return parentId == -1; };
     };
@@ -75,7 +83,7 @@ namespace Registry {
         return registry;
     }
 
-    inline Entity::RegistryEntity3D& createRegistryEntity3D(Entity::EntityType3D type, Loc::Loc3D loc) {
+    inline Entity::RegistryEntity3D& createRegistryEntity3D(Entity::EntityType3D type, Loc::Loc loc) {
         Registry3D& reg = getRegistry3D();
         int newID = static_cast<int>(reg.size());
 
@@ -108,13 +116,13 @@ namespace Entity {
             me.parentId = parent.getID();
         }
 
-        inline Loc::Loc3D getWorldLocation() const {
+        inline Loc::Loc getWorldLocation() const {
             Entity::RegistryEntity3D me = Registry::getRegisteryEntity3D(id);
             Entity::RegistryEntity3D myParent = Registry::getRegisteryEntity3D(me.parentId);
             return { me.loc.X + myParent.loc.X, me.loc.Y + myParent.loc.Y, me.loc.Z + myParent.loc.Z };
         }
 
-        inline Loc::Loc3D getLoc() const {
+        inline Loc::Loc getLoc() const {
             return Registry::getRegisteryEntity3D(id).loc;
         }
 
@@ -125,9 +133,10 @@ namespace Shader {
     inline const char* defaultVertexShader2D = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
+    uniform vec3 loc;
 
     void main() {
-        gl_Position = vec4(aPos, 1.0f);
+        gl_Position = vec4(aPos + loc, 1.0f);
     }
     )";
 
@@ -204,8 +213,21 @@ namespace Game {
 
     typedef GLFWwindow* Window;
 
+    struct FrameBuffer {
+        int width;
+        int height;
+    };
+
+    inline FrameBuffer& getBufferSize() {
+        static FrameBuffer buffer{};
+        return buffer;
+    }
+
     inline Window createWindow(WindowProperties* properties) {
-        return (Window) glfwCreateWindow(properties->w, properties->h, properties->title.c_str(), nullptr, nullptr);
+        FrameBuffer& buffer = getBufferSize();
+        Window window = glfwCreateWindow(properties->w, properties->h, properties->title.c_str(), nullptr, nullptr);
+        glfwGetFramebufferSize(window, &buffer.width, &buffer.height);
+        return window;
     }
 
     inline void setDefaultWindow(Window window) {
@@ -310,20 +332,39 @@ namespace Game {
 
     struct uniformLocations {
         UniformLoc solidColor;
+        UniformLoc loc;
     };
 
-    struct uniformLocationsCam {
+    struct uniformLocations3D {
         UniformLoc projection;
         UniformLoc view;
         UniformLoc model;
+        UniformLoc solidColor;
+        UniformLoc loc;
     };
 
-    struct objectData {
+    struct objectData2D {
         Vbo vbo;
         Vao vao;
         std::size_t vertexCount;
         Color color;
         uniformLocations ulocs;
+        Loc::Loc loc;
+    };
+
+    struct objectData3D {
+        Vbo vbo;
+        Vao vao;
+        std::size_t vertexCount;
+        Color color;
+        uniformLocations3D ulocs;
+        Loc::Loc loc;
+    };
+
+    struct cameraData3D {
+        glm::vec3 cameraPos;
+        glm::vec3 cameraFront;
+        glm::vec3 cameraUp;
     };
 
     enum objectType {
@@ -331,20 +372,23 @@ namespace Game {
     };
 
     template<std::size_t N>
-    inline objectData createObject(float (&array)[N], objectType type, Color color) {
+    inline objectData2D createObject2D(float (&array)[N], objectType type, Color color, const Loc::Loc& loc) {
         if (type == TRIANGLES) {
             //Rule: TRIANGLES type arrays' data must be float * 3 by a coordinate
-            objectData data{};
+            objectData2D data{};
 
             program& programId = getProgram();
 
             data.ulocs.solidColor = glGetUniformLocation(programId, "solidColor");
+            data.ulocs.loc = glGetUniformLocation(programId, "loc");
 
             data.vertexCount = N / 3;
 
             data.color[0] = color[0];
             data.color[1] = color[1];
             data.color[2] = color[2];
+
+            data.loc = loc;
             
             glGenBuffers(1, &data.vbo);
             glGenVertexArrays(1, &data.vao);
@@ -370,14 +414,79 @@ namespace Game {
         return {};
     }
 
+    inline cameraData3D& getMainCamera() {
+        static cameraData3D mainCamera{};
+        return mainCamera;
+    }
+
+    inline void createCamera3D(Loc::Loc pos, Loc::Loc rot, Loc::Loc up) {
+        cameraData3D &data = getMainCamera();
+
+        data.cameraUp.x = up.X;
+        data.cameraUp.y = up.Y;
+        data.cameraUp.z = up.Z;
+
+        data.cameraFront.x = rot.X;
+        data.cameraFront.y = rot.Y;
+        data.cameraFront.z = rot.Z;
+
+        data.cameraPos.x = pos.X;
+        data.cameraPos.y = pos.Y;
+        data.cameraPos.z = pos.Z;
+    }
+
+    template<std::size_t N>
+    inline objectData3D createObject3D(float (&array)[N], objectType type, Color color, Loc::Loc loc) {
+        if (type == TRIANGLES) {
+            objectData3D data{};
+
+            program& programId = getProgram();
+
+            data.ulocs.solidColor = glGetUniformLocation(programId, "solidColor");
+            data.ulocs.model = glGetUniformLocation(programId, "model");
+            data.ulocs.projection = glGetUniformLocation(programId, "projection");
+            data.ulocs.view = glGetUniformLocation(programId, "view");
+
+            data.vertexCount = N / 3;
+
+            data.color[0] = color[0];
+            data.color[1] = color[1];
+            data.color[2] = color[2];
+
+            data.loc = loc;
+
+            glGenBuffers(1, &data.vbo);
+            glGenVertexArrays(1, &data.vao);
+
+            glBindVertexArray(data.vao);
+            glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(array), array, GL_STATIC_DRAW);
+
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, NULL);
+            glEnableVertexAttribArray(0);
+
+            glBindVertexArray(0);
+
+            return data;
+        }
+
+        if (type == QUADS) {
+            std::cerr << "[ERR]QUADS is deprecated";
+            exit(1);
+        }
+
+        return {};
+    }
+
     inline void preloadRate() {
         glUseProgram(getProgram());
     }
 
-    inline void drawObject(objectData& data, objectType type) {
+    inline void drawObject2D(objectData2D& data, objectType type) {
         glBindVertexArray(data.vao);
         
         glUniform3f(data.ulocs.solidColor, data.color[0], data.color[1], data.color[2]);
+        glUniform3f(data.ulocs.loc, data.loc.X, data.loc.Y, data.loc.Z);
 
         if (type == TRIANGLES) {
             glDrawArrays(GL_TRIANGLES, 0, data.vertexCount);
@@ -387,6 +496,35 @@ namespace Game {
             std::cerr << "[ERR]QUADS is deprecated";
             exit(1);
         }
+
+        glBindVertexArray(0);
+    }
+
+    inline void drawObject3D(objectData3D& data) {
+        glBindVertexArray(data.vao);
+
+        glUniform3f(data.ulocs.solidColor, data.color[0], data.color[1], data.color[2]);
+
+        cameraData3D cameradata = getMainCamera();
+
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(data.loc.X, data.loc.Y, data.loc.Z));
+
+        glm::mat4 view = glm::lookAt(
+            cameradata.cameraPos, cameradata.cameraPos + cameradata.cameraFront, cameradata.cameraUp
+        );
+
+        FrameBuffer buffer = getBufferSize();
+
+        glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)buffer.width / (float)buffer.height, 0.1f, 100.0f);
+
+        glUniformMatrix4fv(data.ulocs.projection, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(data.ulocs.view, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(data.ulocs.model, 1, GL_FALSE, glm::value_ptr(model));
+
+        glDrawArrays(GL_TRIANGLES, 0, data.vertexCount);
+
+        glBindVertexArray(0);
     }
 
     inline Game::Window createWindowAndMakeReady(int w, int h, std::string title) {
