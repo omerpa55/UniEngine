@@ -17,6 +17,8 @@ int main() {
         { 0, 0, 0 }
     );
 
+    Game::setBackgroundColor(0, 255, 255);
+
     while (Game::getWindowStatus(window) == Game::ACTIVE) {
         Game::preloadRate();
 

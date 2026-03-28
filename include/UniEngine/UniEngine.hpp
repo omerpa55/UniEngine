@@ -478,7 +478,28 @@ namespace Game {
         return {};
     }
 
+    inline Color& getBackgroundColor() {
+        static Color bgColor = { 0.1f, 0.1f, 0.1f };
+        return bgColor;
+    }
+
+    inline void setBackgroundColor(int r, int g, int b) {
+        Color& bgColor = getBackgroundColor();
+        bgColor[0] = r / 255.0f;
+        bgColor[1] = g / 255.0f;
+        bgColor[2] = b / 255.0f;
+    }
+
     inline void preloadRate() {
+        Color& bgColor = getBackgroundColor();
+        glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
+
+        if (getDimension() == TWO_D) {
+            glClear(GL_COLOR_BUFFER_BIT);
+        } else {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+
         glUseProgram(getProgram());
     }
 
