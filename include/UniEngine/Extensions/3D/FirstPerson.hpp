@@ -1,5 +1,8 @@
 #ifndef FIRSTPERSON_HPP
 #define FIRSTPERSON_HPP
+#if !defined (__cplusplus)
+    #error This library needs C++
+#endif
 #include <UniEngine/UniEngine.hpp>
 
 namespace FPS {

@@ -6,11 +6,11 @@ project(
   default_options : ['warning_level=3', 'cpp_std=c++17'],
 )
 
-glfw3 = dependency('glfw3', required : true)
-glm = dependency('glm', required : true)
+glfw_dep = dependency('glfw3', required : true, fallback: ['glfw', 'glfw_dep'])
+glm_dep = dependency('glm', required : true, fallback: ['glm', 'glm_dep'])
 
 dependencies = [
-  glfw3, glm
+  glfw_dep, glm_dep
 ]
 
 inc = include_directories('include')
