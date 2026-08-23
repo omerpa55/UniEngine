@@ -5,7 +5,7 @@
 ### A game engine with only one header file
 
 ## License
-This project licensed under [MIT](LICENSE) license.
+This project licensed under [GPLv3](LICENSE) license.
 
 ## Beta
 This version is beta 1.0
