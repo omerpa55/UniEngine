@@ -7,10 +7,9 @@ project(
 )
 
 glfw_dep = dependency('glfw3', required : true, fallback: ['glfw', 'glfw_dep'])
-glm_dep = dependency('glm', required : true, fallback: ['glm', 'glm_dep'])
 
 dependencies = [
-  glfw_dep, glm_dep
+  glfw_dep
 ]
 
 inc = include_directories('include')
