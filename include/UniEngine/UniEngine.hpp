@@ -41,6 +41,8 @@ DEALINGS IN THE SOFTWARE.
 #include <iostream>
 #include <glm/glm.hpp>
 
+
+
 namespace Loc {
     struct Loc {
         float X;
@@ -547,8 +549,20 @@ namespace Game {
 
         glBindVertexArray(0);
     }
+}
 
-    inline Game::Window createWindowAndMakeReady(int w, int h, std::string title) {
+namespace Callbacks {
+  inline void fbSize([[maybe_unused]] GLFWwindow *window, int w, int h) noexcept {
+    glViewport(0, 0, w, h);
+  }
+
+  inline void makeAllCallbacks(Game::Window window) {
+    glfwSetFramebufferSizeCallback(window, fbSize);
+  }
+}
+
+namespace Game {
+    [[nodiscard]] inline Game::Window createWindowAndMakeReady(int w, int h, std::string title) noexcept {
         Game::setGlVersion(3, 3, GL_CORE);
 
         Game::WindowProperties properties = { w, h, title };
@@ -558,6 +572,11 @@ namespace Game {
         Game::setDefaultWindow(window);
 
         Game::getGlFunctions();
+
+        // Call it one time to resize it for xwayland
+        Callbacks::fbSize(nullptr, w, h);
+
+        Callbacks::makeAllCallbacks(window);
 
         return window;
     }
